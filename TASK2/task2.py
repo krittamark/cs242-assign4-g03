@@ -1,10 +1,10 @@
 import urllib.request, urllib.parse, urllib.error
 import json
+import os
+import random
 
 serviceurl = "http://www.omdbapi.com/?"
 apikey = "&apikey=4db1ee95"
-
-
 
 def print_json(data):
     movie_data = ["Title", "Year", "Rated", "Released", "Runtime", "Genre", "Director","Writer", "Actors", "Plot", "Language", "Country", "Awards", "Poster",
@@ -14,6 +14,25 @@ def print_json(data):
         print(f"{key}: {data.get(key)}")
     print("-" * 80)
 
+def save_poster(data):
+    poster_url = data.get("Poster")
+    #print(f"Poster URL: {poster_url}")
+    title = data.get("Title")
+    title.replace(" ", "_")
+    if poster_url not in (None, "", "N/A"):
+        try:
+            filename = f"{title}_poster_6609612152.jpg"
+            response = urllib.request.urlopen(poster_url)
+            image = response.read()
+            response.close()
+            f = open(filename, "wb")
+            f.write(image)
+            f.close()
+        except Exception as e:
+            print(f"Error saving poster: {e}")
+    else:
+        print("Poster not available.")
+
 def search_movie(title):
     title = urllib.parse.quote(title)
     url = serviceurl + apikey + "&t=" + title
@@ -22,8 +41,10 @@ def search_movie(title):
         #print(response.getcode())
         data = json.loads(response.read().decode())
         #print(data)
+        response.close()
         if data['Response'] == 'True':
             print_json(data)
+            save_poster(data)
         else:
             print(f"Error: {data.get('Error')}")
             return -1
