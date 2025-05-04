@@ -15,6 +15,7 @@ def print_json(data):
     print("-" * 80)
 
 def search_movie(title):
+    title = urllib.parse.quote(title)
     url = serviceurl + apikey + "&t=" + title
     try:
         response = urllib.request.urlopen(url)
@@ -27,9 +28,16 @@ def search_movie(title):
             print(f"Error: {data.get('Error')}")
             return -1
         return 0
-    except Exception as e:
-        print(f"Error occurred: {e}")
+    except urllib.error.HTTPError as e:
+        print(f"HTTP error: {e.code} - {e.reason}")
         return -1
+    except urllib.error.URLError as e:
+        print(f"URL error: {e.reason}")
+        return -1
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return -1
+
 
 movie_name = input("Enter movie title: ")
 search_movie(movie_name)
