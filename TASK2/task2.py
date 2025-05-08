@@ -22,10 +22,12 @@ def save_poster(data):
     if poster_url not in (None, "", "N/A"):
         try:
             filename = f"{title}_poster_6609612152.jpg"
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            filepath = os.path.join(script_dir, filename)
             response = urllib.request.urlopen(poster_url)
             image = response.read()
             response.close()
-            f = open(filename, "wb")
+            f = open(filepath, "wb")
             f.write(image)
             f.close()
         except Exception as e:
