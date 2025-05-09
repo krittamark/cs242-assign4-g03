@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import re
+import sys
 
 def clean_text(text):
     if text is None:
@@ -39,7 +40,7 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Request to {url} failed !! Error: {e}")
-    exit()
+    sys.exit()
 
 soup = BeautifulSoup(html_doc, 'html.parser')
 
