@@ -1,8 +1,8 @@
+import sys
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import re
-import sys
 
 def clean_text(text):
     if text is None:
@@ -14,17 +14,17 @@ def clean_text(text):
         return None
     return text
 
-def print_dataframe(df, source_name):
+def print_dataframe(df):
     print("-" * 70)
-    print(f"Index Rank Country GDP (million US$) by {source_name}")
+    print(f"{'Index'}\t {'Rank'}\t {'Country':<35} {df.columns[2]}")
     print("-" * 70)
 
     for index, row in df.iterrows():
         rank_str = row['Rank'] if pd.notna(row['Rank']) else '-'
-        gdp_val = row['GDP (million US$)']
+        gdp_val = row[df.columns[2]]
         gdp_str = int(gdp_val) if pd.notna(gdp_val) else '-'
 
-        print(f"{index:<6} {str(rank_str):<5} {row['Country']:<35} {gdp_str}")
+        print(f"{index}\t {str(rank_str)}\t {row['Country']:<35} {gdp_str}")
 
     print("-" * 70)
 
@@ -33,7 +33,7 @@ url = 'https://en.wikipedia.org/wiki/List_of_countries_by_GDP_(nominal)'
 try:
     response = requests.get(url)
     response.raise_for_status()
-
+    
     print(f"Request to {url} successful !!")
     print(f"Status code: {response.status_code} -- {response.reason}")
     html_doc = response.text
@@ -55,17 +55,17 @@ for table in allTables:
         targetTable = table
         break
     elif table.find('th', string=re.compile('IMF')):
-         targetTable = table
-         break
+        targetTable = table
+        break
 
 if not targetTable:
     print("Could not find the target GDP table. Exiting.")
-    exit()
+    sys.exit()
 
 header_rows = targetTable.find_all('tr', class_='static-row-header', limit=2)
 if len(header_rows) < 2:
     print("Could not find expected header rows. Exiting.")
-    exit()
+    sys.exit()
 
 source_ths = header_rows[0].find_all('th')[1:]
 sources = []
@@ -93,8 +93,6 @@ for i, row in enumerate(data_rows):
 
 for i, row in enumerate(data_rows[data_start_index:]):
     cells = row.find_all(['td', 'th'])
-    if len(cells) < 7:
-        continue
 
     is_ranked = 'static-row-numbers-norank' not in row.get('class', [])
 
@@ -111,9 +109,30 @@ for i, row in enumerate(data_rows[data_start_index:]):
     else:
         rank_val = '-'
 
-    imf_gdp = clean_text(cells[1].get_text())
-    wb_gdp = clean_text(cells[3].get_text())
-    un_gdp = clean_text(cells[5].get_text())
+    imf_gdp = None
+    wb_gdp = None
+    un_gdp = None
+
+    logical_col_idx_ptr = 0 
+    actual_cell_idx = 1
+
+    while actual_cell_idx < len(cells) and logical_col_idx_ptr < 6:
+        current_data_cell = cells[actual_cell_idx]
+        cell_text_content = clean_text(current_data_cell.get_text())
+        colspan = int(current_data_cell.get('colspan', 1))
+
+        if logical_col_idx_ptr == 0:
+            if colspan == 1 and cell_text_content is not None:
+                imf_gdp = cell_text_content
+        elif logical_col_idx_ptr == 2:
+            if colspan == 1 and cell_text_content is not None:
+                wb_gdp = cell_text_content
+        elif logical_col_idx_ptr == 4:
+            if colspan == 1 and cell_text_content is not None:
+                un_gdp = cell_text_content
+        
+        logical_col_idx_ptr += colspan
+        actual_cell_idx += 1
 
     all_data.append({
         'Rank': rank_val,
@@ -124,21 +143,21 @@ for i, row in enumerate(data_rows[data_start_index:]):
     })
 
 master_df = pd.DataFrame(all_data)
-master_df['IMF_GDP'] = pd.to_numeric(master_df['IMF_GDP'], errors='coerce')
-master_df['WB_GDP'] = pd.to_numeric(master_df['WB_GDP'], errors='coerce')
-master_df['UN_GDP'] = pd.to_numeric(master_df['UN_GDP'], errors='coerce')
+#master_df['IMF_GDP'] = pd.to_numeric(master_df['IMF_GDP'], errors='coerce')
+#master_df['WB_GDP'] = pd.to_numeric(master_df['WB_GDP'], errors='coerce')
+#master_df['UN_GDP'] = pd.to_numeric(master_df['UN_GDP'], errors='coerce')
 
-df_imf = master_df.loc[master_df['IMF_GDP'].notna(), ['Rank', 'Country', 'IMF_GDP']].copy()
-df_imf.rename(columns={'IMF_GDP': 'GDP (million US$)'}, inplace=True)
+df_imf = master_df[['Rank', 'Country', 'IMF_GDP']].copy()
+df_imf.rename(columns={'IMF_GDP': 'GDP (million US$) by IMF'}, inplace=True)
 df_imf.reset_index(drop=True, inplace=True)
-print_dataframe(df_imf, 'IMF')
+print_dataframe(df_imf)
 
-df_wb = master_df.loc[master_df['WB_GDP'].notna(), ['Rank', 'Country', 'WB_GDP']].copy()
-df_wb.rename(columns={'WB_GDP': 'GDP (million US$)'}, inplace=True)
+df_wb = master_df[['Rank', 'Country', 'WB_GDP']].copy()
+df_wb.rename(columns={'WB_GDP': 'GDP (million US$) by World Bank'}, inplace=True)
 df_wb.reset_index(drop=True, inplace=True)
-print_dataframe(df_wb, 'World Bank')
+print_dataframe(df_wb)
 
-df_un = master_df.loc[master_df['UN_GDP'].notna(), ['Rank', 'Country', 'UN_GDP']].copy()
-df_un.rename(columns={'UN_GDP': 'GDP (million US$)'}, inplace=True)
+df_un = master_df[['Rank', 'Country', 'UN_GDP']].copy()
+df_un.rename(columns={'UN_GDP': 'GDP (million US$) by United Nations'}, inplace=True)
 df_un.reset_index(drop=True, inplace=True)
-print_dataframe(df_un, 'United Nations')
+print_dataframe(df_un)
