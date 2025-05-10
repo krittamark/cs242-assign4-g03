@@ -14,3 +14,4 @@ Task 2 - Movie Info Fetcher
 - urllib.error
 - json
 - os
+- re

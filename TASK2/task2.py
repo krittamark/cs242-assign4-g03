@@ -2,6 +2,7 @@ import urllib.request, urllib.parse, urllib.error
 import json
 import os
 import random
+import re
 
 serviceurl = "http://www.omdbapi.com/?"
 apikey = "&apikey=4db1ee95"
@@ -22,6 +23,7 @@ def save_poster(data):
         try:
             filename = f"{title}_poster_6609612152.jpg"
             filename = filename.replace(" ", "_")
+            filename = re.sub(r'[\\/*?:"<>|-]', "", filename)
             script_dir = os.path.dirname(os.path.abspath(__file__))
             filepath = os.path.join(script_dir, filename)
             response = urllib.request.urlopen(poster_url)
