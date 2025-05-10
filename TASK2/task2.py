@@ -9,19 +9,19 @@ apikey = "&apikey=4db1ee95"
 def print_json(data):
     movie_data = ["Title", "Year", "Rated", "Released", "Runtime", "Genre", "Director","Writer", "Actors", "Plot", "Language", "Country", "Awards", "Poster",
                 "Ratings", "Metascore", "imdbRating", "imdbVotes", "imdbID", "Type","DVD", "BoxOffice", "Production", "Website", "Response"]
-    print("-" * 80)
+    print("-" * 85)
     for key in movie_data:
         print(f"{key}: {data.get(key)}")
-    print("-" * 80)
+    print("-" * 85)
 
 def save_poster(data):
     poster_url = data.get("Poster")
     #print(f"Poster URL: {poster_url}")
     title = data.get("Title")
-    title.replace(" ", "_")
     if poster_url not in (None, "", "N/A"):
         try:
             filename = f"{title}_poster_6609612152.jpg"
+            filename.replace(" ", "_")
             script_dir = os.path.dirname(os.path.abspath(__file__))
             filepath = os.path.join(script_dir, filename)
             response = urllib.request.urlopen(poster_url)
