@@ -21,7 +21,7 @@ def save_poster(data):
     if poster_url not in (None, "", "N/A"):
         try:
             filename = f"{title}_poster_6609612152.jpg"
-            filename.replace(" ", "_")
+            filename = filename.replace(" ", "_")
             script_dir = os.path.dirname(os.path.abspath(__file__))
             filepath = os.path.join(script_dir, filename)
             response = urllib.request.urlopen(poster_url)
